@@ -56,6 +56,7 @@
             this.ButtonLocation.TabIndex = 1;
             this.ButtonLocation.Text = "Output location";
             this.ButtonLocation.UseVisualStyleBackColor = true;
+            this.ButtonLocation.Click += new System.EventHandler(this.ButtonLocation_Click);
             // 
             // label1
             // 
@@ -119,6 +120,7 @@
             this.Text = "AWB Parser";
             this.ResumeLayout(false);
             this.PerformLayout();
+
         }
 
         #endregion
