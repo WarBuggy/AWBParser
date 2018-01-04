@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{A5D90989-73A9-432A-BF09-62F9D62BF94F}</ProjectGuid>
+    <ProjectGuid>{0FFC7B12-633D-4577-84E0-8ED76AEF3EC4}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <RootNamespace>AWBParser</RootNamespace>
     <AssemblyName>AWBParser</AssemblyName>
