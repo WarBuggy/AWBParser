@@ -118,6 +118,7 @@
             this.Controls.Add(this.ButtonLocation);
             this.Controls.Add(this.ButtonChoose);
             this.Name = "FormMain";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "AWB Parser";
             this.ResumeLayout(false);
             this.PerformLayout();

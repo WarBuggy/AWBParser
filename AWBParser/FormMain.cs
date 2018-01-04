@@ -37,6 +37,12 @@ namespace AWBParser
         private string outPutFile = defaultOutputFilename;
         private static string defaultFileExt = ".csv";
         private string currentFile = "";
+        private string report = "";
+
+        string outputContent = "";
+        string PACKAGE_TYPE_DOC = "DOC";
+        string PACKAGE_TYPE_PAK = "DOX";
+
 
         public FormMain()
         {
@@ -147,12 +153,14 @@ namespace AWBParser
             {
                 // Create a reader for the given PDF file
                 PdfReader reader = new PdfReader(fullFileName);
-                for (int page = 1; page <= reader.NumberOfPages; page++)
-                {
-                    currentFile += PdfTextExtractor.GetTextFromPage(reader, page);
-                }
+                currentFile += PdfTextExtractor.GetTextFromPage(reader, 1);
                 reader.Close();
-                showInfoMessage(currentFile);
+                //showInfoMessage(currentFile);
+                bool noError = Parser(currentFile);
+                if (!noError)
+                {
+                    report = report + fullFileName + Environment.NewLine;
+                }
                 return true;
             }
             catch
@@ -161,14 +169,94 @@ namespace AWBParser
             }
         }
 
+        private bool Parser(string fileContent)
+        {
+            string docType = "";
+            string awbNumber = "";
+            string refNumber = "";
+            string weightNumber = "";
+            string totalPiece = "";
+            bool noError = true;
+
+            using (StringReader reader = new StringReader(fileContent))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if (String.Compare(line, PACKAGE_TYPE_DOC, true) == 0 || String.Compare(line, PACKAGE_TYPE_PAK, true) == 0)
+                    {
+                        docType = line;
+                    }
+                    else if (line.Contains("Ref:"))
+                    {
+                        string[] refLine = line.Split(':');
+                        if (refLine.Length == 2)
+                        {
+                            refNumber = refLine[1];
+                        }
+                        else
+                        {
+                            noError = false;
+                        }
+
+                        if ((line = reader.ReadLine()) != null)
+                        {
+                            string[] weightLine = line.Split('/');
+                            int requiredIndex = weightLine.Length - 1;
+                            if (requiredIndex == 1 || requiredIndex == 0)
+                            {
+                                string[] weight = weightLine[requiredIndex].Split(' ');
+                                if (weight.Length == 2)
+                                {
+                                    weightNumber = weight[0];
+                                    if ((line = reader.ReadLine()) != null)
+                                    {
+                                        string[] pcsLine = line.Split('/');
+                                        if (pcsLine.Length == 2)
+                                        {
+                                            totalPiece = pcsLine[1];
+                                        }
+                                        else
+                                        {
+                                            noError = false;
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                noError = false;
+                            }
+                        }
+                    }
+                    else if (line.Contains("WAYBILL "))
+                    {
+                        string[] waybillLine = line.Split(" ".ToCharArray(), 2);
+                        if (waybillLine.Length == 2)
+                        {
+                            awbNumber = waybillLine[1];
+                            //showInfoMessage(awbNumber);
+                        }
+                        else
+                        {
+                            noError = false;
+                        }
+                    }
+                }
+                outputContent = outputContent + awbNumber + "," + docType + "," + refNumber + "," + weightNumber + "," + totalPiece + Environment.NewLine;
+            }
+
+            return noError;
+        }
+
         private void ButtonGenerate_Click(object sender, EventArgs e)
         {
+            outputContent = "";
             if (ofd.FileNames.Length < 1)
             {
                 showErrorMessage("Please select PDFs to parse data!");
                 return;
             }
-
             // Read the files
             foreach (String file in ofd.FileNames)
             {
@@ -192,7 +280,16 @@ namespace AWBParser
                         "it may be corrupt.\n\nReported error: " + ex.Message);
                 }
             }
+            if (report.Length == 0)
+            {
+                showInfoMessage("All files was parsed successfully.");
+            }
+            else
+            {
+                showErrorMessage("The following files were not parsed correctly:" + Environment.NewLine + report);
+            }
 
+            showInfoMessage(outputContent);
         }
     }
 }
