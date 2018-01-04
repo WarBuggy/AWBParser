@@ -89,6 +89,7 @@
             this.ButtonGenerate.TabIndex = 5;
             this.ButtonGenerate.Text = "Generate";
             this.ButtonGenerate.UseVisualStyleBackColor = true;
+            this.ButtonGenerate.Click += new System.EventHandler(this.ButtonGenerate_Click);
             // 
             // LabelOutputLocation
             // 

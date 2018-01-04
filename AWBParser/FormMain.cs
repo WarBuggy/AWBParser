@@ -1,4 +1,6 @@
-﻿using System;
+﻿using iTextSharp.text.pdf;
+using iTextSharp.text.pdf.parser;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -34,6 +36,7 @@ namespace AWBParser
         private static string defaultOutputFilename = DateTime.Now.ToString("yy.MM.dd HH.mm.ss tt");
         private string outPutFile = defaultOutputFilename;
         private static string defaultFileExt = ".csv";
+        private string currentFile = "";
 
         public FormMain()
         {
@@ -62,30 +65,6 @@ namespace AWBParser
             if (dr == DialogResult.OK)
             {
                 LabelTargetFiles.Text = ofd.FileNames.Length + "PDF(s) selected.";
-                // Read the files
-                foreach (String file in ofd.FileNames)
-                {
-                    try
-                    {
-
-                    }
-                    catch (SecurityException ex)
-                    {
-                        // The user lacks appropriate permissions to read files, discover paths, etc.
-                        showErrorMessage("Security error. Please contact your administrator for details.\n\n" +
-                            "Error message: " + ex.Message + "\n\n" +
-                            "Details (send to Support):\n\n" + ex.StackTrace
-                        );
-                    }
-                    catch (Exception ex)
-                    {
-                        // Could not load the pdf - probably related to Windows file system permissions.
-                        showErrorMessage("Cannot parse the PDF: " + file.Substring(file.LastIndexOf('\\'))
-                            + ". You may not have permission to read the file, or " +
-                            "it may be corrupt.\n\nReported error: " + ex.Message);
-                    }
-                }
-
             }
         }
 
@@ -159,6 +138,61 @@ namespace AWBParser
                 SetLocationPath();
                 SetFullLocationText();
             }
+        }
+
+        private bool ReadFromPDF(string fullFileName)
+        {
+            currentFile = "";
+            try
+            {
+                // Create a reader for the given PDF file
+                PdfReader reader = new PdfReader(fullFileName);
+                for (int page = 1; page <= reader.NumberOfPages; page++)
+                {
+                    currentFile += PdfTextExtractor.GetTextFromPage(reader, page);
+                }
+                reader.Close();
+                showInfoMessage(currentFile);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private void ButtonGenerate_Click(object sender, EventArgs e)
+        {
+            if (ofd.FileNames.Length < 1)
+            {
+                showErrorMessage("Please select PDFs to parse data!");
+                return;
+            }
+
+            // Read the files
+            foreach (String file in ofd.FileNames)
+            {
+                try
+                {
+                    ReadFromPDF(file);
+                }
+                catch (SecurityException ex)
+                {
+                    // The user lacks appropriate permissions to read files, discover paths, etc.
+                    showErrorMessage("Security error. Please contact your administrator for details.\n\n" +
+                        "Error message: " + ex.Message + "\n\n" +
+                        "Details (send to Support):\n\n" + ex.StackTrace
+                    );
+                }
+                catch (Exception ex)
+                {
+                    // Could not load the pdf - probably related to Windows file system permissions.
+                    showErrorMessage("Cannot parse the PDF: " + file.Substring(file.LastIndexOf('\\'))
+                        + ". You may not have permission to read the file, or " +
+                        "it may be corrupt.\n\nReported error: " + ex.Message);
+                }
+            }
+
         }
     }
 }
