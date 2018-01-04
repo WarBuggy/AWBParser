@@ -84,17 +84,17 @@ namespace AWBParser
             LabelOutputLocation.Text = outputPath;
         }
 
-        private void showWarningMessage(string message)
+        private void ShowWarningMessage(string message)
         {
             MessageBox.Show(null, message, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation, MessageBoxDefaultButton.Button1);
         }
 
-        private void showErrorMessage(string message)
+        private void ShowErrorMessage(string message)
         {
             MessageBox.Show(null, message, "Unexpected error", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1);
         }
 
-        private void showInfoMessage(string message)
+        private void ShowInfoMessage(string message)
         {
             MessageBox.Show(null, message, "Information", MessageBoxButtons.OK, MessageBoxIcon.Information, MessageBoxDefaultButton.Button1);
         }
@@ -118,7 +118,7 @@ namespace AWBParser
             }
             else
             {
-                showErrorMessage("Invalid character for a file name found.");
+                ShowErrorMessage("Invalid character for a file name found.");
                 TxtBoxFilename.Text = Regex.Replace(TxtBoxFilename.Text, unspupportedRegex.ToString(), "");
                 TxtBoxFilename.Focus();
                 TxtBoxFilename.Select(TxtBoxFilename.Text.Length, 0);
@@ -258,7 +258,7 @@ namespace AWBParser
             using (StreamWriter writer = new StreamWriter(LabelFullOutputDetail.Text))
             {
                 writer.Write(outputContent);
-                showInfoMessage(LabelFullOutputDetail.Text + " was created successfuly.");
+                ShowInfoMessage(LabelFullOutputDetail.Text + " was created successfuly.");
             }
         }
 
@@ -268,7 +268,7 @@ namespace AWBParser
             report = "";
             if (ofd.FileNames.Length < 1)
             {
-                showErrorMessage("Please select PDFs to parse data!");
+                ShowErrorMessage("Please select PDFs to parse data!");
                 return;
             }
             // Read the files
@@ -281,7 +281,7 @@ namespace AWBParser
                 catch (SecurityException ex)
                 {
                     // The user lacks appropriate permissions to read files, discover paths, etc.
-                    showErrorMessage("Security error. Please contact your administrator for details.\n\n" +
+                    ShowErrorMessage("Security error. Please contact your administrator for details.\n\n" +
                         "Error message: " + ex.Message + "\n\n" +
                         "Details (send to Support):\n\n" + ex.StackTrace
                     );
@@ -289,7 +289,7 @@ namespace AWBParser
                 catch (Exception ex)
                 {
                     // Could not load the pdf - probably related to Windows file system permissions.
-                    showErrorMessage("Cannot parse the PDF: " + file.Substring(file.LastIndexOf('\\'))
+                    ShowErrorMessage("Cannot parse the PDF: " + file.Substring(file.LastIndexOf('\\'))
                         + ". You may not have permission to read the file, or " +
                         "it may be corrupt.\n\nReported error: " + ex.Message);
                 }
@@ -298,7 +298,7 @@ namespace AWBParser
             bool createFile = false;
             if (report.Length == 0)
             {
-                showInfoMessage("All files was parsed successfully.");
+                ShowInfoMessage("All files was parsed successfully.");
                 createFile = true;
             }
             else
