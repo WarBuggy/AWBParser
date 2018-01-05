@@ -305,7 +305,7 @@ namespace AWBParser
             {
                 string dialog = "The following files were not parsed correctly:" + Environment.NewLine + report + Environment.NewLine;
                 dialog = dialog + "Do you still want to create the file anyway?";
-                DialogResult dialogResult = MessageBox.Show(dialog, "Please select", MessageBoxButtons.YesNo);
+                DialogResult dialogResult = MessageBox.Show(dialog, "Please select", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
                 if (dialogResult == DialogResult.Yes)
                 {
                     createFile = true;
