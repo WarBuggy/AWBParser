@@ -1,16 +1,10 @@
 ﻿using iTextSharp.text.pdf;
 using iTextSharp.text.pdf.parser;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
+using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Security;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace AWBParser
@@ -40,9 +34,8 @@ namespace AWBParser
         private string report = "";
 
         string outputContent = "";
-        string PACKAGE_TYPE_DOC = "DOC";
-        string PACKAGE_TYPE_PAK = "DOX";
-
+        string PACKAGE_TYPE_DOC = "DOX";
+        string PACKAGE_TYPE_PAK = "WPX";
 
         public FormMain()
         {
@@ -153,9 +146,10 @@ namespace AWBParser
             {
                 // Create a reader for the given PDF file
                 PdfReader reader = new PdfReader(fullFileName);
-                currentFile += PdfTextExtractor.GetTextFromPage(reader, 1);
+                currentFile += PdfTextExtractor.GetTextFromPage(reader, reader.NumberOfPages);
                 reader.Close();
-                //showInfoMessage(currentFile);
+                // SHOW THE PAGE
+                //ShowInfoMessage(fullFileName + Environment.NewLine +  currentFile);
                 bool noError = Parser(currentFile);
                 if (!noError)
                 {
@@ -171,11 +165,12 @@ namespace AWBParser
 
         private bool Parser(string fileContent)
         {
-            string docType = "";
-            string awbNumber = "";
-            string refNumber = "";
-            string weightNumber = "";
-            string totalPiece = "";
+            string docType = "TYPE MISSING";
+            string awbNumber = "AWB MISSING";
+            string refNumber = "REF MISSING";
+            string weightNumber = "KG MISSING";
+            string totalPiece = "PCS MISSING";
+            string dateString = "DATE MISSING";
             bool noError = true;
 
             using (StringReader reader = new StringReader(fileContent))
@@ -189,43 +184,103 @@ namespace AWBParser
                     }
                     else if (line.Contains("Ref:"))
                     {
-                        string[] refLine = line.Split(':');
-                        if (refLine.Length == 2)
+                        string[] refLine = line.Split(' ');
+                        if (refLine.Length >= 2)
                         {
-                            refNumber = refLine[1];
+                            string[] refNumberArray = refLine[0].Split(':');
+                            if (refNumberArray.Length == 2)
+                            {
+                                refNumber = refNumberArray[1];
+                            }
+                            // if ref is missing
+                            else if (refNumberArray.Length == 1)
+                            {
+                                noError = false;
+                            }
+                            // if there is nothing after Ref:
+                            else
+                            {
+                                noError = false;
+                            }
                         }
+                        // if there is nothing after Ref:
                         else
                         {
                             noError = false;
                         }
 
+                        // go to the next line, should be kgs
                         if ((line = reader.ReadLine()) != null)
                         {
-                            string[] weightLine = line.Split('/');
-                            int requiredIndex = weightLine.Length - 1;
-                            if (requiredIndex == 1 || requiredIndex == 0)
+                            // if this is the kg line
+                            if (line.ToLower().Contains("kg"))
                             {
-                                string[] weight = weightLine[requiredIndex].Split(' ');
-                                if (weight.Length == 2)
+                                string[] weightArray = line.Split(' ');
+                                if (weightArray.Length == 2)
                                 {
-                                    weightNumber = weight[0];
-                                    if ((line = reader.ReadLine()) != null)
-                                    {
-                                        string[] pcsLine = line.Split('/');
-                                        if (pcsLine.Length == 2)
-                                        {
-                                            totalPiece = pcsLine[1];
-                                        }
-                                        else
-                                        {
-                                            noError = false;
-                                        }
-                                    }
+                                    weightNumber = weightArray[0];
                                 }
+                                // if there is error in reading weight number
                                 else
                                 {
                                     noError = false;
                                 }
+
+                            }
+                            // if there is no kg
+                            else
+                            {
+                                noError = false;
+                            }
+
+                            // go to pcs line
+                            if ((line = reader.ReadLine()) != null)
+                            {
+                                try
+                                {
+                                    int m = Int32.Parse(line);
+                                    totalPiece = line;
+                                }
+                                // if the number cannot be parse
+                                catch
+                                {
+                                    noError = false;
+                                }
+
+                                // go to date line
+                                if ((line = reader.ReadLine()) != null)
+                                {
+                                    try
+                                    {
+                                        DateTime.TryParseExact(line, "dd-MMM-yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime re);
+                                        dateString = re.ToString("dd-MM-yyyy");
+                                    }
+                                    // if the number cannot be parse
+                                    catch
+                                    {
+                                        noError = false;
+                                    }
+                                }
+                                // if there is no line afetr kg line
+                                else
+                                {
+                                    noError = false;
+                                }
+                            }
+                            // there is no next line after ref line
+                            else
+                            {
+                                noError = false;
+                            }
+
+                        }
+                        else if (line.Contains("WAYBILL "))
+                        {
+                            string[] waybillLine = line.Split(" ".ToCharArray(), 2);
+                            if (waybillLine.Length == 2)
+                            {
+                                awbNumber = waybillLine[1];
+                                //ShowInfoMessage(awbNumber);
                             }
                             else
                             {
@@ -233,26 +288,12 @@ namespace AWBParser
                             }
                         }
                     }
-                    else if (line.Contains("WAYBILL "))
-                    {
-                        string[] waybillLine = line.Split(" ".ToCharArray(), 2);
-                        if (waybillLine.Length == 2)
-                        {
-                            awbNumber = waybillLine[1];
-                            //showInfoMessage(awbNumber);
-                        }
-                        else
-                        {
-                            noError = false;
-                        }
-                    }
                 }
-                outputContent = outputContent + awbNumber + "," + docType + "," + refNumber + "," + weightNumber + "," + totalPiece + Environment.NewLine;
+                outputContent = outputContent + awbNumber + "," + docType + "," + refNumber + "," + dateString + "," + weightNumber + "," + totalPiece + Environment.NewLine;
+                return noError;
             }
 
-            return noError;
         }
-
         private void WriteToFile()
         {
             using (StreamWriter writer = new StreamWriter(LabelFullOutputDetail.Text))
@@ -264,7 +305,7 @@ namespace AWBParser
 
         private void ButtonGenerate_Click(object sender, EventArgs e)
         {
-            outputContent = "AWB,Type,Ref,Weight,Pieces" + Environment.NewLine;
+            outputContent = "AWB,Type,Ref,Date,Weight,Pieces" + Environment.NewLine;
             report = "";
             if (ofd.FileNames.Length < 1)
             {
@@ -315,7 +356,7 @@ namespace AWBParser
             {
                 WriteToFile();
             }
-            //showInfoMessage(outputContent);
+            //ShowInfoMessage(outputContent);
         }
     }
 }
