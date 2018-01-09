@@ -1,6 +1,7 @@
 ﻿using iTextSharp.text.pdf;
 using iTextSharp.text.pdf.parser;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Security;
@@ -149,7 +150,7 @@ namespace AWBParser
                 currentFile += PdfTextExtractor.GetTextFromPage(reader, reader.NumberOfPages);
                 reader.Close();
                 // SHOW THE PAGE
-                //ShowInfoMessage(fullFileName + Environment.NewLine +  currentFile);
+                //ShowInfoMessage(fullFileName + Environment.NewLine + currentFile);
                 bool noError = Parser(currentFile);
                 if (!noError)
                 {
@@ -168,19 +169,32 @@ namespace AWBParser
             string docType = "TYPE MISSING";
             string awbNumber = "AWB MISSING";
             string refNumber = "REF MISSING";
-            string weightNumber = "KG MISSING";
-            string totalPiece = "PCS MISSING";
-            string dateString = "DATE MISSING";
+            //string weightNumber = "KG MISSING";
+            //string totalPiece = "PCS MISSING";
+            //string dateString = "DATE MISSING";
+            string destString = "DEST MISSING";
             bool noError = true;
 
+            List<string> Lines = new List<string>();
             using (StringReader reader = new StringReader(fileContent))
             {
                 string line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    if (String.Compare(line, PACKAGE_TYPE_DOC, true) == 0 || String.Compare(line, PACKAGE_TYPE_PAK, true) == 0)
+                    Lines.Add(line);
+                }
+
+                for (int i = 0; i < Lines.Count; i++)
+                {
+
+                    line = Lines[i];
+                    if (String.Compare(line, PACKAGE_TYPE_DOC, true) == 0)
                     {
-                        docType = line;
+                        docType = "Doc";
+                    }
+                    else if (String.Compare(line, PACKAGE_TYPE_PAK, true) == 0)
+                    {
+                        docType = "Non-Doc";
                     }
                     else if (line.Contains("Ref:"))
                     {
@@ -209,6 +223,7 @@ namespace AWBParser
                             noError = false;
                         }
 
+                        /*
                         // go to the next line, should be kgs
                         if ((line = reader.ReadLine()) != null)
                         {
@@ -272,28 +287,33 @@ namespace AWBParser
                             {
                                 noError = false;
                             }
-
                         }
-                        else if (line.Contains("WAYBILL "))
+                        */
+                    }
+                    else if (line.Contains("WAYBILL "))
+                    {
+                        string[] waybillLine = line.Split(" ".ToCharArray(), 2);
+                        if (waybillLine.Length == 2)
                         {
-                            string[] waybillLine = line.Split(" ".ToCharArray(), 2);
-                            if (waybillLine.Length == 2)
-                            {
-                                awbNumber = waybillLine[1];
-                                //ShowInfoMessage(awbNumber);
-                            }
-                            else
-                            {
-                                noError = false;
-                            }
+                            awbNumber = waybillLine[1];
+                            //ShowInfoMessage(awbNumber);
+                        }
+                        else
+                        {
+                            noError = false;
                         }
                     }
+                    if (line[0] == '.' && i > 0)
+                    {
+                        destString = Lines[i - 1];
+                    }
                 }
-                outputContent = outputContent + awbNumber + "," + docType + "," + refNumber + "," + dateString + "," + weightNumber + "," + totalPiece + Environment.NewLine;
-                return noError;
             }
-
+            outputContent = outputContent + refNumber + ", , " + awbNumber + ", " + destString + ", , " + docType + Environment.NewLine;
+            //outputContent = outputContent + awbNumber + "," + docType + "," + refNumber + "," + dateString + "," + weightNumber + "," + totalPiece + Environment.NewLine;
+            return noError;
         }
+
         private void WriteToFile()
         {
             using (StreamWriter writer = new StreamWriter(LabelFullOutputDetail.Text))
@@ -305,7 +325,7 @@ namespace AWBParser
 
         private void ButtonGenerate_Click(object sender, EventArgs e)
         {
-            outputContent = "AWB,Type,Ref,Date,Weight,Pieces" + Environment.NewLine;
+            outputContent = "Ref, , AWB, Destination, , Goods" + Environment.NewLine;
             report = "";
             if (ofd.FileNames.Length < 1)
             {
