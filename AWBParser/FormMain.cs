@@ -196,6 +196,10 @@ namespace AWBParser
                     {
                         docType = "Non-Doc";
                     }
+                    else if (line.Contains("Ref: "))
+                    {
+
+                    }
                     else if (line.Contains("Ref:"))
                     {
                         string[] refLine = line.Split(' ');
@@ -295,7 +299,7 @@ namespace AWBParser
                         string[] waybillLine = line.Split(" ".ToCharArray(), 2);
                         if (waybillLine.Length == 2)
                         {
-                            awbNumber = waybillLine[1];
+                            awbNumber = waybillLine[1].Replace(" ", String.Empty);
                             //ShowInfoMessage(awbNumber);
                         }
                         else
@@ -303,13 +307,13 @@ namespace AWBParser
                             noError = false;
                         }
                     }
-                    if (line[0] == '.' && i > 0)
+                    else if (line[0] == '.' && i > 0)
                     {
-                        destString = Lines[i - 1];
+                        destString = "\"" + Lines[i - 1] + "\"";
                     }
                 }
             }
-            outputContent = outputContent + refNumber + ", , " + awbNumber + ", " + destString + ", , " + docType + Environment.NewLine;
+            outputContent = outputContent + refNumber + ", , " + awbNumber + "," + destString + ", , " + docType + Environment.NewLine;
             //outputContent = outputContent + awbNumber + "," + docType + "," + refNumber + "," + dateString + "," + weightNumber + "," + totalPiece + Environment.NewLine;
             return noError;
         }
