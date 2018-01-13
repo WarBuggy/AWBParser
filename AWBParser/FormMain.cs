@@ -37,6 +37,8 @@ namespace AWBParser
         string outputContent = "";
         string PACKAGE_TYPE_DOC = "DOX";
         string PACKAGE_TYPE_PAK = "WPX";
+        string[] CHINA1_INCLUDE = { "DGM", "FOC", "CAN", "HAK", "SWA", "SZX", "XMN", "ZUH" };
+        string DEST_MISSING = "DEST MISSING";
 
         public FormMain()
         {
@@ -172,7 +174,7 @@ namespace AWBParser
             //string weightNumber = "KG MISSING";
             //string totalPiece = "PCS MISSING";
             //string dateString = "DATE MISSING";
-            string destString = "DEST MISSING";
+            string destString = DEST_MISSING;
             bool noError = true;
 
             List<string> Lines = new List<string>();
@@ -196,29 +198,32 @@ namespace AWBParser
                     {
                         docType = "Non-Doc";
                     }
-                    else if (line.Contains("Ref: "))
-                    {
-
-                    }
                     else if (line.Contains("Ref:"))
                     {
                         string[] refLine = line.Split(' ');
                         if (refLine.Length >= 2)
                         {
-                            string[] refNumberArray = refLine[0].Split(':');
-                            if (refNumberArray.Length == 2)
+                            if (!refLine[1].Contains("Shpt"))
                             {
-                                refNumber = refNumberArray[1];
+                                refNumber = refLine[1].Trim();
                             }
-                            // if ref is missing
-                            else if (refNumberArray.Length == 1)
-                            {
-                                noError = false;
-                            }
-                            // if there is nothing after Ref:
                             else
                             {
-                                noError = false;
+                                string[] refNumberArray = refLine[0].Split(':');
+                                if (refNumberArray.Length == 2)
+                                {
+                                    refNumber = refNumberArray[1].Trim();
+                                }
+                                // if ref is missing
+                                else if (refNumberArray.Length == 1)
+                                {
+                                    noError = false;
+                                }
+                                // if there is nothing after Ref:
+                                else
+                                {
+                                    noError = false;
+                                }
                             }
                         }
                         // if there is nothing after Ref:
@@ -310,12 +315,43 @@ namespace AWBParser
                     else if (line[0] == '.' && i > 0)
                     {
                         destString = "\"" + Lines[i - 1] + "\"";
+                        destString = IsChina1(line, destString);
+                    }
+                    else if (line.Contains("CN-"))
+                    {
+                        destString = IsChina1(line, destString);
                     }
                 }
             }
             outputContent = outputContent + refNumber + ", , " + awbNumber + "," + destString + ", , " + docType + Environment.NewLine;
             //outputContent = outputContent + awbNumber + "," + docType + "," + refNumber + "," + dateString + "," + weightNumber + "," + totalPiece + Environment.NewLine;
             return noError;
+        }
+
+        private string IsChina1(string line, string givenDest)
+        {
+            string returnString = givenDest;
+            if (line.Contains("CN-"))
+            {
+                bool isChina1 = false;
+                for (int j = 0; j < CHINA1_INCLUDE.Length; j++)
+                {
+                    if (line.Contains(CHINA1_INCLUDE[j]))
+                    {
+                        isChina1 = true;
+                        break;
+                    }
+                }
+                if (isChina1)
+                {
+                    returnString = "China I";
+                }
+                else
+                {
+                    returnString = "China II";
+                }
+            }
+            return returnString;
         }
 
         private void WriteToFile()
